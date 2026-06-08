@@ -81,6 +81,60 @@ While `S1`–`S9` is active:
 
 The browser schedules `S1`–`S9` from the poem text during speech (word rhythm and punctuation pauses) and sends `S0` when speech ends or you press **Stop**.
 
+## Mouth synchronization
+
+Mr. Sonnet’s mouth is driven by **text-driven choreography** in the browser, not by live speech-analysis from the voice engine.
+
+We tested `speechSynthesisUtterance.onboundary` events, but with the current Chrome/Edge voices they did not fire reliably (often zero word events). Because of that, the project uses an **estimated schedule** based on the poem text instead of word-boundary callbacks.
+
+How it works:
+
+- The poem is split into **words**, **punctuation**, and **line breaks**.
+- Each word sends an **`S1`–`S9`** command. Longer words usually produce stronger mouth movement.
+- **Commas, periods, question marks, exclamation marks, and line breaks** trigger short **`S0`** pauses so the lid can close briefly.
+- The schedule starts shortly after speech begins and is scaled to stay roughly aligned with the spoken poem.
+- The **final stop is always authoritative** from `speechSynthesis.onend`, `speechSynthesis.onerror`, or the **Stop** button — not from the end of the text schedule.
+
+This is **expressive poetic synchronization** for a cardboard lid mechanism. It is not perfect phoneme lip sync.
+
+## Sync tuning
+
+Synchronization can be tuned in `index.html` near the speech / servo logic. Open the browser console when testing.
+
+| Constant | Purpose |
+|----------|---------|
+| `SYNC_MOUTH_WITH_TEXT` | `true` = text-driven choreography; `false` = single intensity for the whole poem |
+| `SYNC_DEBUG` | `true` = log schedule preview, serial commands, and speech timing in the console |
+| `SYNC_MOUTH_DIAGNOSTIC` | `true` = re-test `onboundary` events (diagnostic only; not used for motion) |
+| `SPEECH_RATE` | Speech rate for `speechSynthesis` and for choreography timing estimates |
+| `TEXT_SYNC_TIME_SCALE` | Multiplier for scheduled durations. Increase if the mouth finishes **before** the voice; decrease if it lags **behind** |
+| `TEXT_SYNC_START_DELAY_MS` | Delay before the first mouth command after `synth.speak()`. Increase if the mouth starts **before** the voice |
+
+After a full recitation, check the console log `[Mr. Sonnet sync] speech timing` and compare `actualSpeechDurationMs` with `scaledScheduleDurationMs`. The `ratio` helps guide `TEXT_SYNC_TIME_SCALE` adjustments.
+
+## Troubleshooting
+
+**Browser cannot connect to Arduino**  
+Close the Arduino IDE Serial Monitor. Only one program can use the USB serial port at a time. Use **Chrome** or **Edge** (Web Serial is required).
+
+**Servos jitter or Arduino resets**  
+Power the servos from an **external 5V supply** and connect **external GND to Arduino GND**. Bench power from the Uno’s 5V pin is fine for quick tests but often insufficient under load.
+
+**Mouth moves in the wrong direction**  
+In `mr-sonnet-arduino/mr-sonnet-arduino.ino`, toggle `MOUTH_MIRROR`. Confirm the **closed / `S0` position** is correct before changing open-angle values.
+
+**Mouth finishes before or after the voice**  
+Tune `TEXT_SYNC_TIME_SCALE` and `TEXT_SYNC_START_DELAY_MS` in `index.html`. Enable `SYNC_DEBUG` to inspect timing logs in the console.
+
+**Mouth motion feels too small or too strong**  
+Tune mouth angle constants in the Arduino sketch: `MOUTH_OPEN_LOW`, `MOUTH_OPEN_MEDIUM`, `MOUTH_OPEN_STRONG`, `MOUTH_ACCENT_MIN`, `MOUTH_ACCENT_MAX`, and `MOUTH_MIN_SAFE` / `MOUTH_MAX_SAFE`. Reduce values if the servo buzzes or hits a mechanical stop.
+
+**No word boundary events in the console**  
+Expected with some browser voices. The project does **not** rely on boundary events; it uses text-driven choreography. Set `SYNC_MOUTH_DIAGNOSTIC = true` only if you want to re-test.
+
+**`favicon.ico` 404 in the server log**  
+Harmless. The browser is only requesting a site icon that this project does not ship.
+
 ## Project layout
 
 ```
