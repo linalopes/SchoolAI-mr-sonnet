@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mr. Sonnet — School of Tomorrow's AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400&family=Courier+Prime:ital,wght@0,400;1,400&family=Inter:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --purple:     #22113E;
+    --pink:       #EA7DFF;
+    --turquoise:  #08F2DB;
+    --gray-green: #CAD8D8;
+    --white:      #FFFFFF;
+    --bg:         #F7F6F9;
+    --text:       #22113E;
+    --muted:      #8E7FAA;
+  }
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html { font-size: 16px; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: linear-gradient(160deg, rgba(255,255,255,0.85) 0%, rgba(237,234,242,0.2) 60%, transparent 100%);
+    pointer-events: none; z-index: 0;
+  }
+
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(34,17,62,0.018) 3px, rgba(34,17,62,0.018) 4px);
+    pointer-events: none; z-index: 1;
+  }
+
+  .grain {
+    position: fixed; inset: -50%; width: 200%; height: 200%;
+    opacity: 0.028;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 2;
+    animation: grainDrift 0.4s steps(2) infinite;
+  }
+  @keyframes grainDrift {
+    0%{transform:translate(0,0)} 25%{transform:translate(-1%,-1%)}
+    50%{transform:translate(1%,0)} 75%{transform:translate(0,1%)}
+    100%{transform:translate(-1%,1%)}
+  }
+
+  .page {
+    position: relative; z-index: 10;
+    max-width: 640px; margin: 0 auto;
+    padding: 2.5rem 2rem 7rem;
+  }
+
+  /* ── Top bar ── */
+  .topbar {
+    display: flex; align-items: flex-start;
+    justify-content: space-between; margin-bottom: 2rem;
+  }
+
+  .school-tag {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.62rem; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 300;
+    font-size: clamp(2.8rem, 7vw, 4.2rem);
+    line-height: 0.92; color: var(--purple); letter-spacing: -0.03em;
+  }
+  h1 .accent { color: var(--pink); }
+
+  .lang-toggle {
+    display: flex; border: 1px solid rgba(34,17,62,0.15);
+    border-radius: 2px; overflow: hidden; margin-top: 0.4rem;
+  }
+  .lang-btn {
+    background: transparent; border: none;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.68rem; letter-spacing: 0.1em;
+    padding: 0.38rem 0.7rem; cursor: pointer;
+    color: var(--muted); transition: all 0.18s;
+  }
+  .lang-btn.active { background: var(--purple); color: var(--white); }
+  .lang-btn:hover:not(.active) { color: var(--purple); }
+
+  /* ── Serial bar ── */
+  .serial-bar {
+    display: flex; align-items: center; gap: 0.6rem;
+    margin-bottom: 2rem;
+    padding: 0.6rem 0.9rem;
+    background: var(--white);
+    border: 1px solid rgba(34,17,62,0.1);
+    border-radius: 2px;
+    box-shadow: 0 1px 3px rgba(34,17,62,0.05);
+  }
+
+  .serial-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: rgba(34,17,62,0.2);
+    flex-shrink: 0; transition: background 0.3s;
+  }
+  .serial-dot.connected   { background: var(--turquoise); box-shadow: 0 0 6px rgba(8,242,219,0.5); }
+  .serial-dot.connecting  { background: var(--pink); animation: dotPulse 0.7s ease infinite; }
+  @keyframes dotPulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .serial-label {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.62rem; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--muted);
+    flex: 1;
+  }
+
+  /* servo speed indicator */
+  .servo-meter {
+    display: flex; align-items: center; gap: 0.4rem;
+    opacity: 0; transition: opacity 0.4s;
+  }
+  .servo-meter.visible { opacity: 1; }
+  .servo-meter-label {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.58rem; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .servo-bars {
+    display: flex; gap: 2px; align-items: flex-end; height: 14px;
+  }
+  .servo-bar {
+    width: 3px; border-radius: 1px;
+    background: var(--gray-green);
+    transition: height 0.3s, background 0.3s;
+  }
+
+  /* ── Robot ── */
+  .robot-wrap { margin-bottom: 1.8rem; }
+
+  .robot-card {
+    display: inline-flex; flex-direction: column; gap: 0.3rem;
+    background: var(--white);
+    border: 1px solid rgba(34,17,62,0.1);
+    border-radius: 4px; padding: 0.9rem 1.3rem;
+    box-shadow: 0 1px 3px rgba(34,17,62,0.06);
+    position: relative; overflow: hidden;
+    transition: border-color 0.35s, box-shadow 0.35s;
+  }
+  .robot-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 40%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, transparent 100%);
+    pointer-events: none;
+  }
+  .robot-card.thinking { border-color: rgba(234,125,255,0.5); box-shadow: 0 0 0 3px rgba(234,125,255,0.08); }
+  .robot-card.typing   { border-color: rgba(8,242,219,0.5);   box-shadow: 0 0 0 3px rgba(8,242,219,0.06); }
+  .robot-card.speaking {
+    border-color: rgba(8,242,219,0.7);
+    animation: speakPulse 1.4s ease infinite;
+  }
+  @keyframes speakPulse {
+    0%,100% { box-shadow: 0 0 0 3px rgba(8,242,219,0.06); }
+    50%     { box-shadow: 0 0 0 8px rgba(8,242,219,0.12); }
+  }
+
+  .robot-ascii {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.76rem; line-height: 1.55;
+    color: var(--purple); white-space: pre;
+  }
+  .robot-card.thinking .robot-ascii { color: #a040c0; animation: glitch 0.85s steps(1) infinite; }
+  .robot-card.typing .robot-ascii   { color: #0a9e90; }
+  .robot-card.speaking .robot-ascii { color: #0a9e90; }
+
+  @keyframes glitch {
+    0%,100%{clip-path:none;transform:none}
+    20%{clip-path:inset(15% 0 70% 0);transform:translateX(-2px)}
+    40%{clip-path:inset(55% 0 25% 0);transform:translateX(2px)}
+    60%{clip-path:none;transform:none}
+    80%{clip-path:inset(75% 0 5% 0);transform:translateX(-1px)}
+  }
+
+  .robot-status {
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.6rem; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--muted); padding-top: 0.15rem;
+  }
+
+  /* ── Input ── */
+  .input-section { margin-bottom: 1.6rem; }
+
+  .field-label {
+    display: block; font-family: 'Courier Prime', monospace;
+    font-size: 0.63rem; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--pink); margin-bottom: 0.45rem;
+  }
+
+  .input-row { display: flex; gap: 0.45rem; }
+
+  input[type="text"] {
+    flex: 1; background: var(--white);
+    border: 1px solid rgba(34,17,62,0.15); border-radius: 2px;
+    color: var(--purple); font-family: 'Inter', sans-serif;
+    font-weight: 300; font-size: 0.95rem; padding: 0.7rem 0.9rem;
+    outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+    box-shadow: inset 0 1px 2px rgba(34,17,62,0.04);
+  }
+  input[type="text"]:focus {
+    border-color: var(--pink);
+    box-shadow: 0 0 0 3px rgba(234,125,255,0.1), inset 0 1px 2px rgba(34,17,62,0.04);
+  }
+  input[type="text"]::placeholder { color: rgba(34,17,62,0.28); }
+
+  .btn {
+    font-family: 'Courier Prime', monospace; font-size: 0.7rem;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.7rem 1.1rem; border-radius: 2px;
+    border: 1px solid transparent; cursor: pointer;
+    transition: all 0.18s; white-space: nowrap;
+  }
+  .btn-primary { background: var(--purple); color: var(--white); border-color: var(--purple); }
+  .btn-primary:hover:not(:disabled) { background: #3a1f66; }
+  .btn-primary:disabled { opacity: 0.35; cursor: default; }
+
+  .btn-ghost { background: transparent; color: var(--muted); border-color: rgba(34,17,62,0.18); }
+  .btn-ghost:hover:not(:disabled) { color: var(--purple); border-color: rgba(34,17,62,0.45); }
+  .btn-ghost:disabled { opacity: 0.3; cursor: default; }
+
+  .btn-stop { background: transparent; color: #c44; border-color: rgba(204,68,68,0.25); }
+  .btn-stop:hover:not(:disabled) { border-color: rgba(204,68,68,0.6); }
+  .btn-stop:disabled { opacity: 0.25; cursor: default; }
+
+  .btn-connect { background: transparent; color: var(--turquoise); border-color: rgba(8,242,219,0.4); }
+  .btn-connect:hover:not(:disabled) { border-color: var(--turquoise); }
+  .btn-connect.connected { color: #c44; border-color: rgba(204,68,68,0.3); }
+
+  .action-row { display: flex; gap: 0.4rem; margin-top: 0.5rem; }
+
+  .error-msg {
+    font-family: 'Courier Prime', monospace; font-size: 0.75rem;
+    color: #c44; margin-top: 0.8rem; display: none;
+  }
+
+  /* ── Poem ── */
+  .poem-section { padding-top: 0.4rem; }
+
+  .poem-rule {
+    width: 0; height: 1px;
+    background: linear-gradient(90deg, var(--pink) 0%, var(--turquoise) 100%);
+    margin-bottom: 1.8rem; transition: width 0.8s ease;
+  }
+  .poem-rule.visible { width: 100%; }
+
+  #poem-output {
+    font-family: 'Inter', sans-serif; font-weight: 300; font-style: italic;
+    font-size: 1.08rem; line-height: 1.9; color: var(--purple);
+    white-space: pre-wrap; letter-spacing: 0.005em; min-height: 2rem;
+  }
+
+  .cursor-blink {
+    display: inline-block; width: 1.5px; height: 1em;
+    background: var(--turquoise); vertical-align: text-bottom;
+    margin-left: 1px; animation: blink 0.85s steps(2) infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  footer {
+    position: fixed; bottom: 1.4rem; width: 100%; text-align: center;
+    font-family: 'Courier Prime', monospace; font-size: 0.58rem;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: rgba(34,17,62,0.22); z-index: 10; pointer-events: none;
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<main class="page">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="brand">
+      <span class="school-tag">School of Tomorrow's AI</span>
+      <h1>Mr.<br><span class="accent">Sonnet</span></h1>
+    </div>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btn-en" onclick="setLang('en')">EN</button>
+      <button class="lang-btn"        id="btn-pt" onclick="setLang('pt')">PT</button>
+    </div>
+  </div>
+
+  <!-- Serial connection bar -->
+  <div class="serial-bar">
+    <div class="serial-dot" id="serial-dot"></div>
+    <span class="serial-label" id="serial-label">Arduino Uno — not connected</span>
+    <div class="servo-meter" id="servo-meter">
+      <span class="servo-meter-label">servo</span>
+      <div class="servo-bars" id="servo-bars">
+        <div class="servo-bar" style="height:3px"></div>
+        <div class="servo-bar" style="height:3px"></div>
+        <div class="servo-bar" style="height:3px"></div>
+        <div class="servo-bar" style="height:3px"></div>
+        <div class="servo-bar" style="height:3px"></div>
+      </div>
+    </div>
+    <button class="btn btn-connect" id="btn-connect" onclick="toggleSerial()">Connect</button>
+  </div>
+
+  <!-- Robot -->
+  <div class="robot-wrap">
+    <div class="robot-card" id="robot-card">
+      <div class="robot-ascii" id="robot-ascii">
+┌─────────────┐
+│  ○       ○  │
+│    ‾‾‾‾‾    │
+│  ‾‾‾‾‾‾‾‾‾  │
+└──┬───────┬──┘
+   │       │</div>
+      <div class="robot-status" id="robot-status">idle — awaiting input</div>
+    </div>
+  </div>
+
+  <!-- Input -->
+  <div class="input-section">
+    <label class="field-label" id="field-label">word / theme / phrase</label>
+    <div class="input-row">
+      <input type="text" id="topic-input"
+             placeholder="e.g. rust, forgetting, cardboard dreams"
+             maxlength="120" />
+      <button class="btn btn-primary" id="btn-generate" onclick="generate()">Generate</button>
+    </div>
+    <div class="action-row">
+      <button class="btn btn-stop"  id="btn-stop"  onclick="stopAll(true)" disabled>Stop</button>
+      <button class="btn btn-ghost" id="btn-speak" onclick="speakPoem()"   disabled>Speak again</button>
+    </div>
+    <div class="error-msg" id="error-msg"></div>
+  </div>
+
+  <!-- Poem -->
+  <div class="poem-section">
+    <div class="poem-rule" id="poem-rule"></div>
+    <div id="poem-output"></div>
+  </div>
+
+</main>
+
+<footer id="footer-label">v0.3 — web serial ready — Mr. Sonnet waits</footer>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════
+let lang          = 'en';
+let currentPoem   = '';
+let typeTimer     = null;
+let isBusy        = false;
+let typewriterDone = false;
+let isSpeaking    = false;
+const synth       = window.speechSynthesis;
+let utterance     = null;
+
+// ── Serial
+let serialPort    = null;
+let serialWriter  = null;
+let serialConnected = false;
+
+// ══════════════════════════════════════════════════════
+//  ROBOT FACES
+// ══════════════════════════════════════════════════════
+const FACES = {
+  idle:     "┌─────────────┐\n│  ○       ○  │\n│    ‾‾‾‾‾    │\n│  ‾‾‾‾‾‾‾‾‾  │\n└──┬───────┬──┘\n   │       │",
+  thinking: "┌─────────────┐\n│  ◌       ◌  │\n│    ‾‾‾‾‾    │\n│  ‾‾‾‾‾‾‾‾‾  │\n└──┬───────┬──┘\n   │       │",
+  typing:   "┌─────────────┐\n│  ◍       ◍  │\n│    ─────    │\n│  ‾‾‾‾‾‾‾‾‾  │\n└──┬───────┬──┘\n   │       │",
+  speaking: "┌─────────────┐\n│  ◉       ◉  │\n│    ─────    │\n│  ───────────│\n└──┬───────┬──┘\n   │       │",
+};
+
+const STATUS = {
+  en: {
+    idle:     'idle — awaiting input',
+    thinking: 'thinking — processing verse . . .',
+    typing:   'typing — transcribing the poem',
+    speaking: 'speaking — voice active',
+  },
+  pt: {
+    idle:     'em espera — aguardando entrada',
+    thinking: 'pensando — processando versos . . .',
+    typing:   'digitando — transcrevendo o poema',
+    speaking: 'falando — voz ativa',
+  }
+};
+
+function setFace(state) {
+  document.getElementById('robot-card').className = `robot-card ${state}`;
+  document.getElementById('robot-ascii').textContent = FACES[state];
+  document.getElementById('robot-status').textContent = STATUS[lang][state];
+}
+
+// ══════════════════════════════════════════════════════
+//  LANGUAGE
+// ══════════════════════════════════════════════════════
+function setLang(l) {
+  lang = l;
+  document.getElementById('btn-en').classList.toggle('active', l === 'en');
+  document.getElementById('btn-pt').classList.toggle('active', l === 'pt');
+  document.getElementById('topic-input').placeholder =
+    l === 'en' ? 'e.g. rust, forgetting, cardboard dreams'
+               : 'ex: ferrugem, esquecer, sonhos de papelão';
+  document.getElementById('field-label').textContent =
+    l === 'en' ? 'word / theme / phrase' : 'palavra / tema / frase';
+  if (!isBusy && !isSpeaking) setFace('idle');
+}
+
+// ══════════════════════════════════════════════════════
+//  WEB SERIAL
+// ══════════════════════════════════════════════════════
+async function toggleSerial() {
+  if (serialConnected) {
+    await disconnectSerial();
+  } else {
+    await connectSerial();
+  }
+}
+
+async function connectSerial() {
+  if (!('serial' in navigator)) {
+    showSerialStatus('Web Serial not supported — use Chrome or Edge', false);
+    return;
+  }
+  try {
+    setSerialUI('connecting');
+    serialPort = await navigator.serial.requestPort();
+    await serialPort.open({ baudRate: 115200 });
+
+    const encoder = new TextEncoderStream();
+    encoder.readable.pipeTo(serialPort.writable);
+    serialWriter = encoder.writable.getWriter();
+
+    serialConnected = true;
+    setSerialUI('connected');
+  } catch (err) {
+    serialConnected = false;
+    setSerialUI('disconnected');
+    if (err.name !== 'NotFoundError') {
+      showSerialStatus(`serial error: ${err.message}`, false);
+    }
+  }
+}
+
+async function disconnectSerial() {
+  try {
+    if (serialWriter) { await serialWriter.close(); serialWriter = null; }
+    if (serialPort)   { await serialPort.close();   serialPort = null; }
+  } catch (_) {}
+  serialConnected = false;
+  setSerialUI('disconnected');
+}
+
+function setSerialUI(state) {
+  const dot   = document.getElementById('serial-dot');
+  const label = document.getElementById('serial-label');
+  const btn   = document.getElementById('btn-connect');
+
+  if (state === 'connecting') {
+    dot.className = 'serial-dot connecting';
+    label.textContent = 'Arduino Uno — connecting . . .';
+    btn.textContent = 'Cancel';
+    btn.className = 'btn btn-connect';
+  } else if (state === 'connected') {
+    dot.className = 'serial-dot connected';
+    label.textContent = 'Arduino Uno — connected';
+    btn.textContent = 'Disconnect';
+    btn.className = 'btn btn-connect connected';
+    document.getElementById('footer-label').textContent =
+      'v0.3 — servos online — Mr. Sonnet is alive';
+  } else {
+    dot.className = 'serial-dot';
+    label.textContent = 'Arduino Uno — not connected';
+    btn.textContent = 'Connect';
+    btn.className = 'btn btn-connect';
+    document.getElementById('footer-label').textContent =
+      'v0.3 — web serial ready — Mr. Sonnet waits';
+    setServoMeter(0);
+  }
+}
+
+function showSerialStatus(msg, ok) {
+  const label = document.getElementById('serial-label');
+  label.textContent = msg;
+}
+
+// ── Send a command to Arduino Uno (mouth D9, neck D10)
+// Command format: "S<speed>\n"   speed = 0–9  (0 = stop, 1–9 = intensity)
+async function sendServo(speed) {
+  if (!serialConnected || !serialWriter) return;
+  try {
+    const cmd = `S${Math.round(speed)}\n`;
+    await serialWriter.write(cmd);
+    setServoMeter(speed);
+  } catch (err) {
+    console.warn('Serial write error:', err);
+  }
+}
+
+// ── Servo speed meter (visual only)
+function setServoMeter(speed) {
+  const meter = document.getElementById('servo-meter');
+  const bars  = document.getElementById('servo-bars').children;
+  const level = Math.min(9, Math.max(0, speed));
+
+  meter.classList.toggle('visible', level > 0);
+
+  const heights = [3, 5, 8, 11, 14]; // bar heights in px
+  for (let i = 0; i < bars.length; i++) {
+    const active = (i + 1) * 2 <= level;
+    bars[i].style.height = (active ? heights[i] : 3) + 'px';
+    bars[i].style.background = active
+      ? (level >= 7 ? '#EA7DFF' : '#08F2DB')
+      : 'rgba(34,17,62,0.12)';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  SERVO SPEED LOGIC
+//  Map poem character count → speed 1–9
+//  Short poem (~60 chars)  → speed ~2 (slow, tender)
+//  Long poem (~200 chars)  → speed ~8 (agitated)
+// ══════════════════════════════════════════════════════
+function calcServoSpeed(poem) {
+  const len = poem.replace(/\s+/g, '').length; // count non-whitespace chars
+  const min = 40, max = 220;
+  const clamped = Math.min(max, Math.max(min, len));
+  const t = (clamped - min) / (max - min);       // 0.0 → 1.0
+  return Math.round(1 + t * 8);                  // 1 → 9
+}
+
+// ══════════════════════════════════════════════════════
+//  GENERATE
+// ══════════════════════════════════════════════════════
+async function generate() {
+  const topic = document.getElementById('topic-input').value.trim();
+  if (!topic || isBusy) return;
+
+  stopAll(false);
+  isBusy = true;
+  typewriterDone = false;
+  currentPoem = '';
+
+  const out = document.getElementById('poem-output');
+  out.textContent = '';
+  document.getElementById('poem-rule').classList.remove('visible');
+  document.getElementById('btn-generate').disabled = true;
+  document.getElementById('btn-stop').disabled = false;
+  document.getElementById('btn-speak').disabled = true;
+  document.getElementById('error-msg').style.display = 'none';
+
+  setFace('thinking');
+
+  const systemPrompt = lang === 'en'
+    ? `You are Mr. Sonnet, a melancholic cardboard robot poet. Write a short free verse poem with exactly 4 to 6 lines total (no stanza breaks, no title, no blank lines between lines). Each line is brief. Tone: melancholic, tender, slightly worn. The robot has an analogue soul. Output only the poem lines, nothing else.`
+    : `Você é Mr. Sonnet, um robô de papelão melancólico e poeta. Escreva um poema em verso livre com exatamente 4 a 6 versos no total (sem estrofes separadas, sem título, sem linhas em branco entre os versos). Cada verso é breve. Tom: melancólico, terno, levemente gasto. O robô tem uma alma analógica. Escreva apenas os versos, nada mais.`;
+
+  const userPrompt = lang === 'en'
+    ? `Write a melancholic free verse poem (4–6 lines, no title, no blank lines) about: ${topic}`
+    : `Escreva um poema em verso livre e melancólico (4–6 versos, sem título, sem linhas em branco) sobre: ${topic}`;
+
+  try {
+    const res = await fetch('/api/poem', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    currentPoem = data.content[0].text.trim();
+    document.getElementById('poem-rule').classList.add('visible');
+    setFace('typing');
+
+    typewrite(currentPoem, () => {
+      isBusy = false;
+      typewriterDone = true;
+      document.getElementById('btn-generate').disabled = false;
+      document.getElementById('btn-stop').disabled = true;
+      document.getElementById('btn-speak').disabled = false;
+      setFace('idle');
+      speakPoem();
+    });
+
+  } catch (err) {
+    isBusy = false;
+    document.getElementById('btn-generate').disabled = false;
+    document.getElementById('btn-stop').disabled = true;
+    setFace('idle');
+    const el = document.getElementById('error-msg');
+    el.textContent = `⚠ ${err.message}`;
+    el.style.display = 'block';
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  TYPEWRITER
+// ══════════════════════════════════════════════════════
+function typewrite(text, onDone) {
+  const el = document.getElementById('poem-output');
+  let i = 0;
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor-blink';
+  el.appendChild(cursor);
+
+  function tick() {
+    if (i < text.length) {
+      cursor.insertAdjacentText('beforebegin', text[i]);
+      i++;
+      const ch = text[i - 1];
+      const delay = ch === '\n'            ? 55
+                  : /[.,;:!?—–]/.test(ch) ? 90
+                  :                          20 + Math.random() * 16;
+      typeTimer = setTimeout(tick, delay);
+    } else {
+      cursor.remove();
+      if (onDone) onDone();
+    }
+  }
+  tick();
+}
+
+// ══════════════════════════════════════════════════════
+//  SPEECH  +  SERVO
+// ══════════════════════════════════════════════════════
+const SYNC_MOUTH_WITH_TEXT = true;
+const SYNC_DEBUG = true;
+const SYNC_MOUTH_DIAGNOSTIC = false;
+const SPEECH_RATE = 0.82;
+const TEXT_SYNC_TIME_SCALE = 1.45;
+const TEXT_SYNC_START_DELAY_MS = 300;
+
+let speechChoreoTimers = [];
+let speechChoreoGen = 0;
+let lastSentServoSpeed = null;
+let speechSyncTiming = null;
+
+function countPoemWords(text) {
+  const matches = text.match(/[\p{L}\p{N}']+/gu);
+  return matches ? matches.length : 0;
+}
+
+function logBoundaryDiagnosticSummary(boundaryEventCount, boundaryWordCount, poem) {
+  const expectedWords = countPoemWords(poem);
+  const wordBoundariesAvailable = boundaryWordCount > 0;
+  const fallbackChoreographyRecommended =
+    !wordBoundariesAvailable ||
+    boundaryWordCount < Math.max(1, Math.floor(expectedWords * 0.5));
+
+  console.log('[Mr. Sonnet sync] utterance finished', {
+    totalBoundaryEvents: boundaryEventCount,
+    wordBoundaryEvents: boundaryWordCount,
+    expectedWords,
+    wordBoundariesAvailable,
+    fallbackChoreographyRecommended,
+  });
+}
+
+function clearSpeechChoreography() {
+  speechChoreoGen++;
+  speechChoreoTimers.forEach(id => clearTimeout(id));
+  speechChoreoTimers = [];
+  lastSentServoSpeed = null;
+}
+
+function sendServoDebounced(speed) {
+  const s = Math.min(9, Math.max(0, Math.round(speed)));
+  if (s === lastSentServoSpeed) return;
+  lastSentServoSpeed = s;
+  if (SYNC_DEBUG) console.log('[Mr. Sonnet sync] serial', `S${s}`);
+  sendServo(s);
+}
+
+function tokenizePoem(text) {
+  const tokens = [];
+  const re = /[\p{L}\p{N}']+|,|\.|:|;|\?|!|\n/gu;
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    const value = match[0];
+    if (value === '\n') {
+      tokens.push({ type: 'linebreak', value });
+    } else if (/^[,.\:;?!]$/.test(value)) {
+      tokens.push({ type: 'punct', value });
+    } else {
+      tokens.push({ type: 'word', value });
+    }
+  }
+  return tokens;
+}
+
+function nextPunctuationAfter(tokens, wordIndex) {
+  for (let j = wordIndex + 1; j < tokens.length; j++) {
+    if (tokens[j].type === 'punct') return tokens[j].value;
+    if (tokens[j].type === 'linebreak') return '\n';
+    if (tokens[j].type === 'word') break;
+  }
+  return null;
+}
+
+function calcTokenIntensity(word, baseSpeed, followingPunct) {
+  const len = word.replace(/'/g, '').length;
+  let speed;
+
+  if (len <= 3) speed = Math.max(1, baseSpeed - 2);
+  else if (len <= 7) speed = baseSpeed;
+  else if (len <= 11) speed = Math.min(9, baseSpeed + 2);
+  else speed = Math.min(9, baseSpeed + 3);
+
+  if (followingPunct === '!' || followingPunct === '?') {
+    speed = Math.min(9, baseSpeed + 3);
+  } else if (followingPunct === '.' || followingPunct === '\n') {
+    speed = Math.min(9, Math.max(speed, baseSpeed + 1));
+  }
+
+  return speed;
+}
+
+function wordDurationMs(word) {
+  const len = word.length;
+  if (len <= 3) return Math.round(250 / SPEECH_RATE);
+  if (len <= 7) return Math.round(370 / SPEECH_RATE);
+  return Math.round(525 / SPEECH_RATE);
+}
+
+function punctPauseMs(punct) {
+  if (punct === ',' || punct === ';' || punct === ':') return Math.round(215 / SPEECH_RATE);
+  if (punct === '.' || punct === '?' || punct === '!') return Math.round(375 / SPEECH_RATE);
+  return 0;
+}
+
+function lineBreakPauseMs() {
+  return Math.round(450 / SPEECH_RATE);
+}
+
+function scaleSyncDuration(ms) {
+  return Math.round(ms * TEXT_SYNC_TIME_SCALE);
+}
+
+function scheduleChoreoEvent(delayMs, gen, fn) {
+  const id = setTimeout(() => {
+    if (gen !== speechChoreoGen) return;
+    fn();
+  }, delayMs);
+  speechChoreoTimers.push(id);
+}
+
+function scheduleSpeechChoreography(poem, baseSpeed, startDelayMs) {
+  const tokens = tokenizePoem(poem);
+  const gen = speechChoreoGen;
+  let rawTotalMs = 0;
+  let scaledAtMs = 0;
+  const preview = [];
+
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    const fireAtMs = startDelayMs + scaledAtMs;
+
+    if (token.type === 'word') {
+      const following = nextPunctuationAfter(tokens, i);
+      const speed = calcTokenIntensity(token.value, baseSpeed, following);
+      const reason = following === '!' || following === '?'
+        ? `word (${token.value.length} chars) + ${following}`
+        : following === '.' || following === '\n'
+          ? `word (${token.value.length} chars) + pause`
+          : `word (${token.value.length} chars)`;
+      const durationRaw = wordDurationMs(token.value);
+
+      preview.push({ ms: fireAtMs, token: token.value, command: `S${speed}`, reason });
+      scheduleChoreoEvent(fireAtMs, gen, () => sendServoDebounced(speed));
+      rawTotalMs += durationRaw;
+      scaledAtMs += scaleSyncDuration(durationRaw);
+      continue;
+    }
+
+    if (token.type === 'punct') {
+      const durationRaw = punctPauseMs(token.value);
+      preview.push({
+        ms: fireAtMs,
+        token: token.value,
+        command: 'S0',
+        reason: `punctuation pause (${token.value})`,
+      });
+      scheduleChoreoEvent(fireAtMs, gen, () => sendServoDebounced(0));
+      rawTotalMs += durationRaw;
+      scaledAtMs += scaleSyncDuration(durationRaw);
+      continue;
+    }
+
+    if (token.type === 'linebreak') {
+      const durationRaw = lineBreakPauseMs();
+      preview.push({ ms: fireAtMs, token: '\\n', command: 'S0', reason: 'line break pause' });
+      scheduleChoreoEvent(fireAtMs, gen, () => sendServoDebounced(0));
+      rawTotalMs += durationRaw;
+      scaledAtMs += scaleSyncDuration(durationRaw);
+    }
+  }
+
+  const timing = {
+    rawDurationMs: rawTotalMs,
+    scaledDurationMs: scaledAtMs,
+    startDelayMs,
+    wallEndMs: startDelayMs + scaledAtMs,
+  };
+
+  if (SYNC_DEBUG) {
+    console.log('[Mr. Sonnet sync] timing estimate', {
+      rawDurationMs: timing.rawDurationMs,
+      scaledDurationMs: timing.scaledDurationMs,
+      startDelayMs: timing.startDelayMs,
+      wallEndMs: timing.wallEndMs,
+      scale: TEXT_SYNC_TIME_SCALE,
+    });
+    console.log('[Mr. Sonnet sync] schedule preview', preview);
+  }
+
+  return timing;
+}
+
+async function speakPoem() {
+  if (!currentPoem || isSpeaking) return;
+  clearSpeechChoreography();
+  synth.cancel();
+  isSpeaking = true;
+  speechSyncTiming = null;
+  document.getElementById('btn-speak').disabled = true;
+  document.getElementById('btn-stop').disabled = false;
+  setFace('speaking');
+
+  const baseSpeed = calcServoSpeed(currentPoem);
+
+  if (!SYNC_MOUTH_WITH_TEXT) {
+    await sendServo(baseSpeed);
+    await new Promise(r => setTimeout(r, 400));
+  }
+
+  utterance = new SpeechSynthesisUtterance(currentPoem);
+  utterance.lang  = lang === 'en' ? 'en-US' : 'pt-BR';
+  utterance.rate  = SPEECH_RATE;
+  utterance.pitch = 0.60;
+
+  const voices = synth.getVoices();
+  const preferred = lang === 'en'
+  ? ['Google UK English Male', 'Daniel', 'Fred', 'Alex', 'Google US English']
+  : ['Google português do Brasil', 'Felipe'];
+
+const found = preferred.reduce((pick, name) =>
+  pick || voices.find(v => v.name.includes(name)), null);
+
+if (found) utterance.voice = found;
+
+  let boundaryEventCount = 0;
+  let boundaryWordCount  = 0;
+  let speechStartTimestamp = 0;
+
+  if (SYNC_MOUTH_DIAGNOSTIC) {
+    console.log('[Mr. Sonnet sync] diagnostic enabled', {
+      voice: utterance.voice ? utterance.voice.name : '(default)',
+      lang: utterance.lang,
+      poemWords: countPoemWords(currentPoem),
+    });
+
+    utterance.onboundary = (event) => {
+      boundaryEventCount++;
+      if (event.name === 'word') boundaryWordCount++;
+
+      const len = event.charLength ?? 0;
+      const wordSlice = len > 0
+        ? currentPoem.slice(event.charIndex, event.charIndex + len)
+        : currentPoem.slice(event.charIndex, event.charIndex + 24).split(/\s/)[0];
+
+      console.log('[Mr. Sonnet sync] boundary', {
+        name: event.name,
+        charIndex: event.charIndex,
+        charLength: event.charLength,
+        text: wordSlice,
+        t: performance.now(),
+        elapsedMs: Math.round(performance.now() - speechStartTimestamp),
+      });
+    };
+  }
+
+  const finishSpeech = async () => {
+    if (SYNC_MOUTH_DIAGNOSTIC) {
+      logBoundaryDiagnosticSummary(boundaryEventCount, boundaryWordCount, currentPoem);
+    }
+    if (SYNC_DEBUG && speechStartTimestamp > 0) {
+      const speechEndTimestamp = performance.now();
+      const actualSpeechDurationMs = speechEndTimestamp - speechStartTimestamp;
+      const scaledMs = speechSyncTiming ? speechSyncTiming.scaledDurationMs : 0;
+      console.log('[Mr. Sonnet sync] speech timing', {
+        speechStart: Math.round(speechStartTimestamp),
+        speechEnd: Math.round(speechEndTimestamp),
+        actualSpeechDurationMs: Math.round(actualSpeechDurationMs),
+        rawScheduleDurationMs: speechSyncTiming ? speechSyncTiming.rawDurationMs : null,
+        scaledScheduleDurationMs: scaledMs,
+        wallEndMs: speechSyncTiming ? speechSyncTiming.wallEndMs : null,
+        ratio: scaledMs > 0 ? (actualSpeechDurationMs / scaledMs).toFixed(2) : null,
+      });
+    }
+    clearSpeechChoreography();
+    isSpeaking = false;
+    lastSentServoSpeed = null;
+    await sendServo(0);
+    document.getElementById('btn-speak').disabled = !typewriterDone;
+    document.getElementById('btn-stop').disabled  = true;
+    setFace('idle');
+  };
+
+  utterance.onend = finishSpeech;
+  utterance.onerror = finishSpeech;
+
+  speechStartTimestamp = performance.now();
+  if (SYNC_DEBUG) {
+    console.log('[Mr. Sonnet sync] speech start', { t: Math.round(speechStartTimestamp) });
+  }
+
+  synth.speak(utterance);
+
+  if (SYNC_MOUTH_WITH_TEXT) {
+    speechSyncTiming = scheduleSpeechChoreography(
+      currentPoem,
+      baseSpeed,
+      TEXT_SYNC_START_DELAY_MS
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  STOP
+// ══════════════════════════════════════════════════════
+function stopAll(updateUI = true) {
+  if (typeTimer) { clearTimeout(typeTimer); typeTimer = null; }
+  clearSpeechChoreography();
+  synth.cancel();
+  isSpeaking = false;
+  isBusy = false;
+  lastSentServoSpeed = null;
+  sendServo(0);
+  document.getElementById('poem-output')
+    .querySelectorAll('.cursor-blink').forEach(c => c.remove());
+
+  if (updateUI) {
+    document.getElementById('btn-stop').disabled = true;
+    document.getElementById('btn-generate').disabled = false;
+    document.getElementById('btn-speak').disabled = !typewriterDone;
+    setFace('idle');
+  }
+}
+
+// ── Enter key
+document.getElementById('topic-input')
+  .addEventListener('keydown', e => { if (e.key === 'Enter') generate(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "2026-03-mr-sonnet",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node --env-file=.env server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Mr. Sonnet — web poem generator with Arduino Uno servo control via Web Serial",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
