@@ -8,7 +8,7 @@ The physical controller is an **Arduino Uno** with two SG90-style servos (mouth 
 
 - [Node.js](https://nodejs.org/) (v18+ recommended; uses `--env-file` for `.env`)
 - Chrome or Edge (Web Serial API)
-- Arduino Uno flashed with `arduino/mr-sonnet-arduino.ino`
+- Arduino Uno flashed with `mr-sonnet-arduino/mr-sonnet-arduino.ino`
 - Anthropic API key in `.env`
 
 ## Setup
@@ -47,7 +47,7 @@ The physical controller is an **Arduino Uno** with two SG90-style servos (mouth 
 
 Flash the sketch with the Arduino IDE (or `arduino-cli`):
 
-- Open `arduino/mr-sonnet-arduino.ino`
+- Open `mr-sonnet-arduino/mr-sonnet-arduino.ino`
 - Board: Arduino Uno
 - Install the **Servo** library if prompted (built-in on most installs)
 - Upload via USB
@@ -75,19 +75,20 @@ Format: `S` + digit + newline, e.g. `S5\n`.
 
 While `S1`–`S9` is active:
 
-- **Mouth (D9)** opens and closes continuously.
+- **Mouth (D9)** flaps open and closed (cardboard lid + elastic return).
 - **Neck (D10)** moves subtly left and right.
 - Higher values increase speed and range.
 
-The browser maps poem length to `S1`–`S9` during speech and sends `S0` when speech ends or you press **Stop**.
+The browser schedules `S1`–`S9` from the poem text during speech (word rhythm and punctuation pauses) and sends `S0` when speech ends or you press **Stop**.
 
 ## Project layout
 
 ```
-index.html              Web UI (poem, speech, Web Serial)
-server.js               Express static server + /api/poem proxy
+index.html                        Web UI (poem, speech, Web Serial)
+server.js                         Express static server + /api/poem proxy
 package.json
-.env                    API key (not committed — add your own)
+.gitignore                        Excludes .env and node_modules/
+.env                              API key (local only — create after clone)
 mr-sonnet-arduino/
-  mr-sonnet-arduino.ino  Uno firmware
+  mr-sonnet-arduino.ino           Arduino Uno firmware
 ```
